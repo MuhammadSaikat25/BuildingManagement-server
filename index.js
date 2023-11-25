@@ -7,6 +7,25 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors());
 
+const VerifyJwt = (req, res, next) => {
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res
+      .status(401)
+      .send({ error: true, message: "unauthorized access" });
+  }
+  const token = authorization.split(" ")[1];
+  jwt.verify(token, process.env.JWT, (error, decode) => {
+    if (error) {
+      return res
+        .status(401)
+        .send({ error: true, message: "unauthorized access" });
+    }
+    req.decode = decode;
+    next();
+  });
+};
+
 const { MongoClient, ServerApiVersion, Code } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@cluster0.aezjkqe.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -26,18 +45,24 @@ async function run() {
     // Send a ping to confirm a successful connection
     const Apartments = client.db("Building").collection("Apartments");
     const Users = client.db("Building").collection("Users");
+    const  Agreement = client.db("Building").collection("Agreement");
 
     app.post("/addUser", async (req, res) => {
       const user = req.body;
-     
-      const query={email:user.email}
-      const userExits=await Users.findOne(query)
-      if(userExits){
-        return 
+      const query = { email: user.email };
+      const userExits = await Users.findOne(query);
+      if (userExits) {
+        return;
       }
       const result = await Users.insertOne(user);
       res.send(result);
     });
+    app.post('/agreement',VerifyJwt,async(req,res)=>{
+      const data=req.body 
+      
+      const result=await Agreement.insertOne(data)
+      res.send(result)
+    })
     // ? get all apartments
     app.get("/apartments", async (req, res) => {
       const result = await Apartments.find().toArray();
