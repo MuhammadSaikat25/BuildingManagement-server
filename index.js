@@ -45,7 +45,7 @@ async function run() {
     // Send a ping to confirm a successful connection
     const Apartments = client.db("Building").collection("Apartments");
     const Users = client.db("Building").collection("Users");
-    const  Agreement = client.db("Building").collection("Agreement");
+    const Agreement = client.db("Building").collection("Agreement");
 
     app.post("/addUser", async (req, res) => {
       const user = req.body;
@@ -57,18 +57,25 @@ async function run() {
       const result = await Users.insertOne(user);
       res.send(result);
     });
-    app.post('/agreement',VerifyJwt,async(req,res)=>{
-      const data=req.body 
-      
-      const result=await Agreement.insertOne(data)
-      res.send(result)
-    })
+    app.post("/agreement", VerifyJwt, async (req, res) => {
+      const data = req.body;
+
+      const result = await Agreement.insertOne(data);
+      res.send(result);
+    });
     // ? get all apartments
     app.get("/apartments", async (req, res) => {
       const result = await Apartments.find().toArray();
       res.send(result);
     });
 
+    // ! get user role
+    app.get("/userRoal/:email", VerifyJwt, async (req, res) => {
+      const user = req.params.email;
+      const query = { email: user };
+      const request = await Users.findOne(query);
+      res.send(request);
+    });
     //! implement jwt
     app.post("/jwt", (req, res) => {
       const user = req.body;
