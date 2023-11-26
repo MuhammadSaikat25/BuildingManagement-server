@@ -46,6 +46,7 @@ async function run() {
     const Apartments = client.db("Building").collection("Apartments");
     const Users = client.db("Building").collection("Users");
     const Agreement = client.db("Building").collection("Agreement");
+    const Coupon = client.db("Building").collection("Coupon");
 
     app.post("/addUser", async (req, res) => {
       const user = req.body;
@@ -82,7 +83,22 @@ async function run() {
       const token = jwt.sign(user, process.env.JWT, { expiresIn: "1d" });
       res.send({ token });
     });
-
+    // ! VerifyAdmin 
+    const VerifyAdmin=async(req,res,next)=>{
+      const email=req.decode.email
+      const query ={email:email}
+      const findUser=await Users.findOne(query)
+      const admin=findUser.role==='admin'
+      if(!admin){
+        return res.status(401).send('forbidden access')
+      }
+      next()
+    }
+    app.post('/addCoupon',VerifyJwt,VerifyAdmin, async(req,res)=>{
+        const data=req.body 
+        const result=await Coupon.insertOne(data)
+        res.send(result)
+    })
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
