@@ -47,7 +47,7 @@ async function run() {
     const Users = client.db("Building").collection("Users");
     const Agreement = client.db("Building").collection("Agreement");
     const Coupon = client.db("Building").collection("Coupon");
-
+    // ! add user
     app.post("/addUser", async (req, res) => {
       const user = req.body;
       const query = { email: user.email };
@@ -58,9 +58,20 @@ async function run() {
       const result = await Users.insertOne(user);
       res.send(result);
     });
+    // ! VerifyAdmin
+    const VerifyAdmin = async (req, res, next) => {
+      const email = req.decode.email;
+      const query = { email: email };
+      const findUser = await Users.findOne(query);
+      const admin = findUser.role === "admin";
+      if (!admin) {
+        return res.status(401).send("forbidden access");
+      }
+      next();
+    };
+    // ! add agreement
     app.post("/agreement", VerifyJwt, async (req, res) => {
       const data = req.body;
-
       const result = await Agreement.insertOne(data);
       res.send(result);
     });
@@ -69,7 +80,11 @@ async function run() {
       const result = await Apartments.find().toArray();
       res.send(result);
     });
-
+    // ! get all Agreement request
+    app.get('/getAgreement',VerifyJwt,VerifyAdmin,async(req,res)=>{
+      const result=await Agreement.find().toArray()
+      res.send(result)
+    })
     // ! get user role
     app.get("/userRoal/:email", VerifyJwt, async (req, res) => {
       const user = req.params.email;
@@ -83,22 +98,13 @@ async function run() {
       const token = jwt.sign(user, process.env.JWT, { expiresIn: "1d" });
       res.send({ token });
     });
-    // ! VerifyAdmin 
-    const VerifyAdmin=async(req,res,next)=>{
-      const email=req.decode.email
-      const query ={email:email}
-      const findUser=await Users.findOne(query)
-      const admin=findUser.role==='admin'
-      if(!admin){
-        return res.status(401).send('forbidden access')
-      }
-      next()
-    }
-    app.post('/addCoupon',VerifyJwt,VerifyAdmin, async(req,res)=>{
-        const data=req.body 
-        const result=await Coupon.insertOne(data)
-        res.send(result)
-    })
+    
+    // ! add coupon
+    app.post("/addCoupon", VerifyJwt, VerifyAdmin, async (req, res) => {
+      const data = req.body;
+      const result = await Coupon.insertOne(data);
+      res.send(result);
+    });
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
