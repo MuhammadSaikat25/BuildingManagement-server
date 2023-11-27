@@ -88,7 +88,7 @@ async function run() {
     // ! get user role
     app.get("/userRole/:email", VerifyJwt, async (req, res) => {
       const user = req.params.email;
-      console.log(user)
+     
       const query = { email: user };
       const request = await Users.findOne(query);
       res.send(request);
