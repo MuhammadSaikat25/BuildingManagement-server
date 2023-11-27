@@ -75,7 +75,7 @@ async function run() {
       const result = await Agreement.insertOne(data);
       res.send(result);
     });
-    // ? get all apartments
+    // ! get all apartments
     app.get("/apartments", async (req, res) => {
       const result = await Apartments.find().toArray();
       res.send(result);
@@ -88,6 +88,7 @@ async function run() {
     // ! get user role
     app.get("/userRole/:email", VerifyJwt, async (req, res) => {
       const user = req.params.email;
+      console.log(user)
       const query = { email: user };
       const request = await Users.findOne(query);
       res.send(request);
@@ -98,7 +99,6 @@ async function run() {
       const token = jwt.sign(user, process.env.JWT, { expiresIn: "1d" });
       res.send({ token });
     });
-    
     // ! add coupon
     app.post("/addCoupon", VerifyJwt, VerifyAdmin, async (req, res) => {
       const data = req.body;
@@ -106,10 +106,9 @@ async function run() {
       res.send(result);
     });
     // ! handel user agreements request 
-    app.patch('/handelAgreement/:id',async(req,res)=>{
+    app.patch('/handelAgreement/:id',VerifyJwt,VerifyAdmin, async(req,res)=>{
       const id=req.params.id
       const data=req.body
-      
       const query={_id :new ObjectId(id)}
       const updateDoc={
         $set:{
@@ -119,6 +118,21 @@ async function run() {
       const result=await Agreement.updateOne(query,updateDoc)
       res.send(result)
     })
+    // ! makeUser role into member if admin accept agreement 
+    app.patch('/makeUserMember/:email',VerifyJwt,VerifyAdmin,async(req,res)=>{
+      const email=req.params.email
+      const data=req.body
+      const query={email}
+      const updateDoc={
+        $set:{
+         ...data
+        }
+      }
+      const result=await Users.updateOne(query,updateDoc)
+      res.send(result)
+    })
+
+    //! ----------------------------------------------
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
