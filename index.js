@@ -26,7 +26,7 @@ const VerifyJwt = (req, res, next) => {
   });
 };
 
-const { MongoClient, ServerApiVersion, Code } = require("mongodb");
+const { MongoClient, ServerApiVersion, Code, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@cluster0.aezjkqe.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -86,7 +86,7 @@ async function run() {
       res.send(result)
     })
     // ! get user role
-    app.get("/userRoal/:email", VerifyJwt, async (req, res) => {
+    app.get("/userRole/:email", VerifyJwt, async (req, res) => {
       const user = req.params.email;
       const query = { email: user };
       const request = await Users.findOne(query);
@@ -105,6 +105,20 @@ async function run() {
       const result = await Coupon.insertOne(data);
       res.send(result);
     });
+    // ! handel user agreements request 
+    app.patch('/handelAgreement/:id',async(req,res)=>{
+      const id=req.params.id
+      const data=req.body
+      
+      const query={_id :new ObjectId(id)}
+      const updateDoc={
+        $set:{
+         ...data
+        }
+      }
+      const result=await Agreement.updateOne(query,updateDoc)
+      res.send(result)
+    })
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
