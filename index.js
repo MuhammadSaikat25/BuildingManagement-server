@@ -27,6 +27,7 @@ const VerifyJwt = (req, res, next) => {
 };
 
 const { MongoClient, ServerApiVersion, Code, ObjectId } = require("mongodb");
+const e = require("express");
 const uri = `mongodb+srv://${process.env.DBUSER}:${process.env.DBPASS}@cluster0.aezjkqe.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -80,19 +81,42 @@ async function run() {
       const result = await Apartments.find().toArray();
       res.send(result);
     });
+    // ! get all members 
+    app.get('/allMembers',VerifyJwt,VerifyAdmin,async(req,res)=>{
+      const query={role:'member'}
+      const result=await Agreement.find(query).toArray()
+      res.send(result)
+    })
     // ! get all Agreement request
     app.get('/getAgreement',VerifyJwt,VerifyAdmin,async(req,res)=>{
-      const result=await Agreement.find().toArray()
+      const query = {
+        $and: [
+          { role:'user' },
+          { status: 'pending' }
+        ]
+      }
+      const result=await Agreement.find(query).toArray()
       res.send(result)
     })
     // ! get user role
     app.get("/userRole/:email", VerifyJwt, async (req, res) => {
       const user = req.params.email;
-     
       const query = { email: user };
-      const request = await Users.findOne(query);
-      res.send(request);
+      const result = await Users.findOne(query); 
+      res.send(result);
     });
+    // ! get login users agreement request data 
+    app.get('/userAgreement/:email',VerifyJwt,async(req,res)=>{
+      const email=req.params.email 
+      const query = {
+        $and: [
+          { user:email },
+          { status: 'pending' }
+        ]
+      }
+      const result=await Agreement.find(query).toArray()
+      res.send(result)
+    })
     //! implement jwt
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -118,20 +142,47 @@ async function run() {
       const result=await Agreement.updateOne(query,updateDoc)
       res.send(result)
     })
-    // ! makeUser role into member if admin accept agreement 
-    app.patch('/makeUserMember/:email',VerifyJwt,VerifyAdmin,async(req,res)=>{
-      const email=req.params.email
+    // ! remove member and chance role into user 
+    app.patch('/removeMember/:id',VerifyJwt,VerifyAdmin,async(req,res)=>{
+      const id=req.params.id
       const data=req.body
-      const query={email}
+      const query={_id:new ObjectId(id)} 
       const updateDoc={
         $set:{
          ...data
         }
       }
+      const result=await Agreement.updateOne(query,updateDoc)
+      res.send(result)
+    })
+    // ! user into member when agreements request is accept 
+    app.patch('/userToMember/:email',VerifyJwt,VerifyAdmin,async(req,res)=>{
+      const email=req.params.email
+      const data=res.body 
+      const query ={email:email}
+      const updateDoc={
+        $set:{
+          ...data,
+          role:"member"
+        }
+      }
       const result=await Users.updateOne(query,updateDoc)
       res.send(result)
     })
-
+    // ! member into user when agreements request is reject
+    app.patch('/memberToUser/:email',VerifyJwt,VerifyAdmin,async(req,res)=>{
+      const email=req.params.email
+      const data=res.body 
+      const query ={email:email}
+      const updateDoc={
+        $set:{
+          ...data,
+          role:"user"
+        }
+      }
+      const result=await Users.updateOne(query,updateDoc)
+      res.send(result)
+    })
     //! ----------------------------------------------
     await client.db("admin").command({ ping: 1 });
     console.log(
