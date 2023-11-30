@@ -7,7 +7,7 @@ const port = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors());
 const stripe = require("stripe")(process.env.Payment_Key);
-// console.log(process.env.Payment_Key)
+
 
 const VerifyJwt = (req, res, next) => {
   const authorization = req.headers.authorization;
@@ -127,10 +127,15 @@ async function run() {
       const result = await Agreement.find(query).toArray();
       res.send(result);
     });
-    // ! get coupon 
+    // ! get coupon for admin
     app.get('/coupon',VerifyJwt,VerifyJwt,async(req,res)=>{
       const result= await Coupon.find().toArray()
       res.send(result)
+    })
+    // ! get coupons 
+    app.get('/getAllCoupons',async(req,res)=>{
+    const result =await Coupon.find().toArray()
+    res.send(result)
     })
     // ! get member payment data
     app.get("/getPayment/:email", VerifyJwt, async (req, res) => {
@@ -162,14 +167,14 @@ async function run() {
       const result = await Coupon.insertOne(data);
       res.send(result);
     });
-    // ! post Announcement for admin
+    // ! post Announcement 
     app.post('/postAnnouncement',VerifyJwt,VerifyAdmin,async(req,res)=>{
       const data=req.body 
       const result =await Announcement.insertOne(data)
       res.send(result)
 
     })
-    // ! get Announcement
+    // ! get Announcement for admin
     app.get('/getAnnouncement',VerifyJwt,VerifyAdmin,async(req,res)=>{
       const result=await Announcement.find().toArray()
       res.send(result)
@@ -264,6 +269,20 @@ async function run() {
       const result = await Payment.insertOne(data);
       res.send(result);
     });
+// -----------------------------------------------------------------
+    app.get('/members',VerifyJwt,VerifyAdmin,async(req,res)=>{
+      const result=await Users.find({role:'member'}).toArray()
+      res.send(result)
+    })
+    app.get('/user',VerifyJwt,VerifyAdmin,async(req,res)=>{
+      const result=await Users.find({role:'user'}).toArray()
+      res.send(result)
+    })
+    app.get('/booking',VerifyJwt,VerifyAdmin,async(req,res)=>{
+      const query ={role:'member',status:'checked'}
+      const result=await Agreement.find(query).toArray()
+      res.send(result)
+    })
     //! ----------------------------------------------
     await client.db("admin").command({ ping: 1 });
     console.log(
