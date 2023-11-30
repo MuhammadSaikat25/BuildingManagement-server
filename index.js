@@ -123,6 +123,24 @@ async function run() {
       const result = await Agreement.find(query).toArray();
       res.send(result);
     });
+    // ! get member payment data
+    app.get("/getPayment/:email", VerifyJwt, async (req, res) => {
+      const email = req.params.email;
+      const query = { email };
+      const result = await Payment.find(query).toArray();
+      res.send(result);
+    });
+    // ! get payment by month
+    app.get("/getPaymentByMonth", VerifyJwt, async (req, res) => {
+      const email = req.query.email;
+      const month = req.query.month;
+      const query = {
+        $and: [{ email }, { date: `2023-${month}-30` }],
+      };
+
+      const result = await Payment.find(query).toArray();
+      res.send(result);
+    });
     //! implement jwt
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -215,11 +233,11 @@ async function run() {
       });
       res.send({ clientSecret: paymentIntent.client_secret });
     });
-    app.post('/receivePayment',VerifyJwt,async(req,res)=>{
-      const data=req.body 
-      const result=await Payment.insertOne(data)
-      res.send(result)
-    })
+    app.post("/receivePayment", VerifyJwt, async (req, res) => {
+      const data = req.body;
+      const result = await Payment.insertOne(data);
+      res.send(result);
+    });
     //! ----------------------------------------------
     await client.db("admin").command({ ping: 1 });
     console.log(
