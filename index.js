@@ -51,6 +51,7 @@ async function run() {
     const Agreement = client.db("Building").collection("Agreement");
     const Coupon = client.db("Building").collection("Coupon");
     const Payment = client.db("Building").collection("Payment");
+    const Announcement = client.db("Building").collection("Announcement");
     // ! add user
     app.post("/addUser", async (req, res) => {
       const user = req.body;
@@ -81,7 +82,10 @@ async function run() {
     });
     // ! get all apartments
     app.get("/apartments", async (req, res) => {
-      const result = await Apartments.find().toArray();
+      const page = Number(req.query.page) || 1
+      const limit = Number(req.query.limit) || 5
+      const skip = (page - 1) * limit
+      const result = await Apartments.find().skip(skip).limit(limit).toArray()
       res.send(result);
     });
     // ! get all members
@@ -123,6 +127,11 @@ async function run() {
       const result = await Agreement.find(query).toArray();
       res.send(result);
     });
+    // ! get coupon 
+    app.get('/coupon',VerifyJwt,VerifyJwt,async(req,res)=>{
+      const result= await Coupon.find().toArray()
+      res.send(result)
+    })
     // ! get member payment data
     app.get("/getPayment/:email", VerifyJwt, async (req, res) => {
       const email = req.params.email;
@@ -153,6 +162,23 @@ async function run() {
       const result = await Coupon.insertOne(data);
       res.send(result);
     });
+    // ! post Announcement for admin
+    app.post('/postAnnouncement',VerifyJwt,VerifyAdmin,async(req,res)=>{
+      const data=req.body 
+      const result =await Announcement.insertOne(data)
+      res.send(result)
+
+    })
+    // ! get Announcement
+    app.get('/getAnnouncement',VerifyJwt,VerifyAdmin,async(req,res)=>{
+      const result=await Announcement.find().toArray()
+      res.send(result)
+    })
+    // ! get Announcement user and member 
+    app.get('/UM/Announcement',VerifyJwt,async(req,res)=>{
+      const result=await Announcement.find().toArray()
+      res.send(result)
+    })
     // ! handel user agreements request
     app.patch(
       "/handelAgreement/:id",
